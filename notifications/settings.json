@@ -1,0 +1,24 @@
+{
+  "apiKey": "${ANTHROPIC_API_KEY}",
+  "model": "claude-opus-4-5-20251101",
+  "maxFileSize": 10000000,
+  "maxProjectFileSize": 100000000,
+  "contextLimit": 200000,
+  "allowedEditLocations": ["project", "home"],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": {
+          "tool_name": "AskUserQuestion"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/notify.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

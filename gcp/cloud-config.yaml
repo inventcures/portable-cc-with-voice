@@ -1,0 +1,260 @@
+#cloud-config
+# Cloud-init configuration for Portable Claude Code VM
+# This runs on first boot to set up the base environment
+
+# Update packages on first boot
+package_update: true
+package_upgrade: true
+
+# Set timezone
+timezone: UTC
+
+# Packages to install
+packages:
+  # Essentials
+  - curl
+  - wget
+  - git
+  - build-essential
+  - ca-certificates
+  - apt-transport-https
+
+  # Shell and terminal
+  - tmux
+  - zsh
+  - zsh-autosuggestions
+  - zsh-syntax-highlighting
+
+  # Development tools
+  - nodejs
+  - npm
+  - python3
+  - python3-pip
+  - python3-venv
+
+  # Utilities
+  - jq
+  - ripgrep
+  - fzf
+  - htop
+  - neovim
+  - unzip
+
+  # Network and SSH
+  - openssh-server
+  - mosh-server
+
+  # Security
+  - fail2ban
+  - ufw
+
+# Create directories
+mkdir:
+  - /opt/portable-cc
+  - /home/ubuntu/.claude/hooks
+
+# Write files
+write_files:
+  # Message of the day with Tailscale setup instructions
+  - path: /etc/motd
+    content: |
+      ╔════════════════════════════════════════════════════════════╗
+      ║      Portable Claude Code - Development VM                 ║
+      ╠════════════════════════════════════════════════════════════╣
+      ║                                                              ║
+      ║  First boot setup required:                                 ║
+      ║                                                              ║
+      ║  1. Install Tailscale:                                      ║
+      ║     curl -fsSL https://tailscale.com/install.sh | sh        ║
+      ║     sudo tailscale up                                       ║
+      ║                                                              ║
+      ║  2. Get your Tailscale IP:                                  ║
+      ║     tailscale ip -4                                        ║
+      ║                                                              ║
+      ║  3. Connect from your iOS device via Termius               ║
+      ║                                                              ║
+      ║  For setup help, see:                                       ║
+      ║  https://github.com/your-repo/portable-cc-with-voice        ║
+      ║                                                              ║
+      ╚════════════════════════════════════════════════════════════╝
+
+  # Tailscale installation wrapper script
+  - path: /opt/portable-cc/install-tailscale.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Install Tailscale on this VM
+
+      set -euo pipefail
+
+      echo "Installing Tailscale..."
+
+      # Add Tailscale repository and install
+      curl -fsSL https://tailscale.com/install.sh | sh
+
+      echo ""
+      echo "Tailscale installed!"
+      echo ""
+      echo "Next steps:"
+      echo "1. Authenticate with Tailscale:"
+      echo "   sudo tailscale up"
+      echo ""
+      echo "2. Enable Tailscale SSH (optional):"
+      echo "   sudo tailscale up --ssh=11222"
+      echo ""
+      echo "3. Get your Tailscale IP:"
+      echo "   tailscale ip -4"
+      echo ""
+
+  # Basic tmux.conf for mobile-friendly usage
+  - path: /home/ubuntu/.tmux.conf
+    content: |
+      # Portable CC - tmux configuration for mobile development
+
+      # Remap prefix from C-b to C-a (screen-compatible)
+      set -g prefix C-a
+      unbind C-b
+      bind C-a send-prefix
+
+      # iOS-friendly settings
+      set -g mouse on
+      set -g status-interval 5
+      set -g base-index 1
+      setw -g pane-base-index 1
+
+      # Status bar - compact for mobile
+      set -g status-left '[#S] '
+      set -g status-right '%H:%M '
+      set -g status-left-length 20
+      set -g status-right-length 10
+      set -g status-style 'bg=black fg=white'
+
+      # Better pane splitting
+      bind | split-window -h -c "#{pane_current_path}"
+      bind - split-window -v -c "#{pane_current_path}"
+      unbind '"'
+      unbind %
+
+      # Vi-style keys
+      setw -g mode-keys vi
+
+      # Window navigation
+      bind c new-window -c "#{pane_current_path}"
+      bind n next-window
+      bind p previous-window
+
+      # Easy renaming
+      bind , command-prompt -p "Window name:" "rename-window '%%'"
+
+      # Pane navigation (iOS keyboard friendly)
+      bind h select-pane -L
+      bind j select-pane -D
+      bind k select-pane -U
+      bind l select-pane -R
+
+      # Scrollback buffer - larger for reviewing output
+      set -g history-limit 10000
+
+  # Zsh configuration with tmux auto-attach
+  - path: /home/ubuntu/.zshrc
+    content: |
+      # Portable CC - Zsh configuration
+
+      # Basic settings
+      export EDITOR=nvim
+      export VISUAL=nvim
+      export LANG=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
+
+      # History
+      HISTSIZE=10000
+      SAVEHIST=10000
+      setopt SHARE_HISTORY
+      setopt HIST_IGNORE_DUPS
+      setopt HIST_IGNORE_SPACE
+
+      # Auto-attach to tmux session on SSH login
+      if [[ -z "$TMUX" && -n "$SSH_CONNECTION" ]]; then
+          # Check for existing sessions
+          EXISTING_SESSIONS=$(tmux list-sessions 2>/dev/null || true)
+
+          if [[ -n "$EXISTING_SESSIONS" ]]; then
+              # Attach to 'main' session or show list
+              if echo "$EXISTING_SESSIONS" | grep -q "^main:"; then
+                  exec tmux attach -t main
+              else
+                  echo "Existing tmux sessions:"
+                  echo "$EXISTING_SESSIONS"
+                  echo ""
+                  read -p "Attach to session (or press Enter for 'main'): " SESSION
+                  SESSION=${SESSION:-main}
+                  if tmux has-session -t "$SESSION" 2>/dev/null; then
+                      exec tmux attach -t "$SESSION"
+                  else
+                      exec tmux new -s "$SESSION"
+                  fi
+              fi
+          else
+              # Create new 'main' session
+              exec tmux new -s main
+          fi
+      fi
+
+      # Aliases
+      alias ll='ls -lah'
+      alias gs='git status'
+      alias ga='git add'
+      alias gc='git commit'
+      alias gp='git push'
+
+      # Prompt (simple for mobile)
+      PROMPT='%~ $ '
+
+  # Fail2ban configuration for SSH
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 3
+      destemail = root@localhost
+      sendername = Fail2Ban
+      action = %(action_)s
+
+      [sshd]
+      enabled = true
+      port = 22
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+
+# Run commands on first boot
+runcmd:
+  # Set Ubuntu as owner of home directory files
+  - chown -R ubuntu:ubuntu /home/ubuntu
+
+  # Make scripts executable
+  - chmod +x /opt/portable-cc/*.sh
+
+  # Enable fail2ban
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+
+  # Configure UFW (will be managed by Tailscale)
+  - ufw --force enable
+  - ufw default deny incoming
+  - ufw default allow outgoing
+
+  # Print ready message
+  - |
+    echo ""
+    echo "=================================="
+    echo "Portable CC VM - First Boot Complete"
+    echo "=================================="
+    echo ""
+    echo "The VM is ready for Tailscale setup."
+    echo "Run: sudo /opt/portable-cc/install-tailscale.sh"
+    echo ""
+
+# Final message when cloud-init completes
+final_message: "Portable CC VM setup complete. Run 'sudo /opt/portable-cc/install-tailscale.sh' to configure Tailscale."
