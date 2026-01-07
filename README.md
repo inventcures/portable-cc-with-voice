@@ -1,6 +1,8 @@
-# Portable Claude Code on iOS
+# Portable Claude Code with Voice
 
-Invoke Claude Code from your iPhone for development work anywhere. Based on [Claude Code On-The-Go](https://granda.org/en/2026/01/02/claude-code-on-the-go/), adapted for Google Cloud with voice input support.
+Invoke Claude Code from your iPhone or Android for development work anywhere. Based on [Claude Code On-The-Go](https://granda.org/en/2026/01/02/claude-code-on-the-go/), adapted for Google Cloud with voice input support.
+
+**Cross-Platform**: Start a session on iPhone, continue on Android, finish on desktop—all attaching to the same tmux session!
 
 ## Quick Start
 
@@ -16,11 +18,19 @@ Invoke Claude Code from your iPhone for development work anywhere. Based on [Cla
    sudo ./tailscale/install.sh
    ```
 
-3. **Set up iOS apps** (~5 minutes)
+3. **Set up mobile apps** (~5 minutes)
+
+   **iOS:**
    - Install Termius (SSH client)
    - Install Tailscale (VPN)
    - Install ntfy (notifications)
    - Install Wispr Flow (voice input, optional)
+
+   **Android:**
+   - Install JuiceSSH or Termius (SSH client)
+   - Install Termux (terminal)
+   - Install Tailscale (VPN)
+   - Install ntfy (notifications)
 
 4. **Connect and code**
    ```bash
@@ -38,31 +48,42 @@ Invoke Claude Code from your iPhone for development work anywhere. Based on [Cla
 ## Architecture
 
 ```
-iOS Device (iPhone)
-├── Termius (SSH/Mosh)
-├── Tailscale (VPN)
-├── ntfy (notifications)
-└── Wispr Flow (voice)
-        ↓
-Google Cloud VM
-├── tmux (persistent sessions)
-├── Claude Code CLI
-└── Hook scripts
-        ↓
-Push Notifications
+iOS Device (iPhone)              Android Device
+├── Termius (SSH/Mosh)           ├── JuiceSSH / Termux
+├── Tailscale (VPN)              ├── Tailscale (VPN)
+├── ntfy (notifications)         ├── ntfy (notifications)
+└── Wispr Flow (voice)           └── Gboard / Voice Access
+        ↓                               ↓
+        └───────────┬───────────────────┘
+                    ↓
+          Tailscale VPN Network
+                    ↓
+          Google Cloud VM
+    ├── tmux (persistent sessions)
+    ├── Claude Code CLI
+    └── Hook scripts
+                    ↓
+          Push Notifications (ntfy.sh)
+                    ↓
+    ┌───────────────┴───────────────┐
+    ↓                               ↓
+iOS Notification           Android Notification
 ```
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Cloud VM** | e2-medium on Google Cloud (~$0.05/hr) |
-| **Secure Access** | Tailscale VPN only, no public SSH |
-| **Session Persistence** | tmux survives network transitions |
-| **Push Notifications** | Alerted when Claude needs input |
-| **Voice Input** | Dictate commands via Wispr Flow |
-| **Multi-Agent** | Run multiple Claude instances in parallel |
-| **Cost Control** | Start/stop on demand, ~$10-30/month |
+| Feature | iOS | Android | Description |
+|---------|-----|---------|-------------|
+| **Cloud VM** | ✅ | ✅ | e2-medium on Google Cloud (~$0.05/hr) |
+| **Secure Access** | ✅ | ✅ | Tailscale VPN only, no public SSH |
+| **Session Persistence** | ✅ | ✅ | tmux survives network transitions |
+| **Push Notifications** | ✅ | ✅ | Alerted when Claude needs input |
+| **Voice Input** | ✅ | ✅ | Wispr Flow (iOS), Gboard/Voice Access (Android) |
+| **Multi-Agent** | ✅ | ✅ | Run multiple Claude instances in parallel |
+| **Cross-Platform** | ✅ | ✅ | Same tmux session from iOS or Android |
+| **Local Terminal** | ❌ | ✅ | Termux provides full Linux on Android |
+| **Automation** | iOS Shortcuts | Tasker | Platform-specific automation |
+| **Cost Control** | ✅ | ✅ | Start/stop on demand, ~$10-30/month |
 
 ## Project Structure
 
@@ -72,13 +93,14 @@ portable-cc-with-voice/
 ├── tailscale/        # Tailscale installation and config
 ├── ssh/              # SSH hardening and key setup
 ├── vm-config/        # VM dependencies and Claude setup
-├── vm-lifecycle/     # Start/stop/status scripts
+├── vm-lifecycle/     # Start/stop/status scripts (work from Termux!)
 ├── ios-shortcuts/    # iOS Shortcuts and Cloud Function
+├── android/          # Android-specific guides and setup
 ├── tmux/             # tmux configuration and guides
 ├── notifications/    # Push notification hook setup
-├── voice/            # Wispr Flow and Siri guides
+├── voice/            # Voice input guides (iOS & Android)
 ├── worktrees/        # Git worktree management scripts
-└── docs/             # Detailed specifications
+└── docs/             # Detailed specifications (v0 iOS, v1 Android)
 ```
 
 ## Setup Guide
@@ -218,6 +240,36 @@ See [ios-shortcuts/README.md](ios-shortcuts/README.md) for:
 - Cloud Function deployment
 - Status checking
 
+### Phase 7b: Android Setup (Optional)
+
+**For Android users:**
+
+1. **Install Termux**
+   - Download from F-Droid or GitHub
+   - Run `termux-setup-storage` for file access
+   - Install packages: `pkg install git curl jq tmux mosh openssh`
+
+2. **Install JuiceSSH** (alternative to Termius)
+   - Download from Play Store
+   - Add your VM connection
+   - Import SSH keys or generate new ones
+
+3. **Set up Tasker** (automation)
+   - Import profiles from `android/tasker-import.xml`
+   - Configure variables (Cloud Function URL, API key)
+   - Create home screen widgets
+
+4. **Voice input**
+   - Use Gboard Voice Typing (built-in)
+   - Or Google Voice Access for hands-free control
+   - See [android/voice-input-guide.md](android/voice-input-guide.md)
+
+See [android/](android/) for complete Android documentation:
+- [Termux setup guide](android/termux-setup-guide.md)
+- [Tasker automation](android/tasker-profiles.md)
+- [Cross-platform workflows](android/cross-platform.md)
+- [File management](android/file-management.md)
+
 ## Daily Workflow
 
 ### Starting a Development Session
@@ -354,6 +406,14 @@ See [docs/v0_specs.md](docs/v0_specs.md) for detailed security specifications.
 - ntfy app (free)
 - Wispr Flow (free tier, optional)
 
+### Android Device
+- Android phone/tablet (Android 8+ recommended)
+- JuiceSSH or Termius (free alternatives available)
+- Termux (free, full Linux terminal)
+- Tailscale app (free)
+- ntfy app (free, better background handling than iOS)
+- Tasker (paid, optional for automation)
+
 ### Google Cloud
 - GCP account with billing
 - Service account with Compute Instance Admin role
@@ -367,12 +427,13 @@ See [docs/v0_specs.md](docs/v0_specs.md) for detailed security specifications.
 
 ## Alternatives
 
-| Component | Primary Alternative |
-|-----------|---------------------|
-| SSH Client | Blink Shell (better mosh) |
-| Cloud Provider | Vultr (easier setup), AWS Lightsail |
-| Notifications | Gotify (self-hosted), Pushover |
-| Voice Input | Siri Dictation (built-in) |
+| Component | iOS | Android |
+|-----------|-----|---------|
+| SSH Client | Blink Shell (better mosh) | ConnectBot (open-source) |
+| Cloud Provider | Vultr (easier), AWS Lightsail | Same |
+| Notifications | Gotify (self-hosted), Pushover | Same |
+| Voice Input | Siri Dictation (built-in) | Futo Voice Input (privacy) |
+| Automation | iOS Shortcuts | Automate, MacroDroid |
 
 ## Contributing
 
@@ -394,4 +455,9 @@ MIT License - feel free to use and adapt for your own needs.
 
 **Made with ❤️ for mobile developers everywhere**
 
-Start coding from anywhere! 📱💻
+Start coding from anywhere—iPhone, Android, or desktop! 📱💻
+
+**Documentation**:
+- [v0 Specifications](docs/v0_specs.md) - iOS implementation details
+- [v1 Android Specifications](docs/v1_android_support_specs.md) - Android support
+- [Android Guide](android/) - Complete Android documentation

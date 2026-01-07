@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TaskerData sr="" taskerversion="6.2.26">
+  <Task sr="task7"/>
+  <Task sr="task5"/>
+  <Task sr="task1"/>
+  <Task sr="task2"/>
+  <Task sr="task3"/>
+  <Task sr="task4"/>
+  <Task sr="task8"/>
+  <Task sr="task6"/>
+
+  <Task sr="task7">
+    <c>Start Dev VM</c>
+    <Action>
+      <code>HTTP Request</code>
+      <sr>act0</sr>
+      <Str>url</Str>
+      <Str>%CLOUD_FUNCTION_URL</Str>
+      <Int>1</Int>
+      <Str>method</Str>
+      <Str>POST</Str>
+      <Str>headers</Str>
+      <Array>
+        <Str>Content-Type: application/json</Str>
+        <Str>X-API-Key: %API_KEY</Str>
+      </Array>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Wait</code>
+      <sr>act1</sr>
+      <Int>5000</Int>
+    </Action>
+    <Action>
+      <code>Flash</code>
+      <sr>act2</sr>
+      <Str>VM is starting...</Str>
+      <Int>1</Int>
+    </Action>
+    <Action>
+      <code>Notify</code>
+      <sr>act3</sr>
+      <Str>Portable CC</Str>
+      <Str>VM start command sent</Str>
+      <Int>2</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task5">
+    <c>Stop Dev VM</c>
+    <Action>
+      <code>HTTP Request</code>
+      <sr>act0</sr>
+      <Str>url</Str>
+      <Str>%CLOUD_FUNCTION_URL</Str>
+      <Int>1</Int>
+      <Str>method</Str>
+      <Str>DELETE</Str>
+      <Str>headers</Str>
+      <Array>
+        <Str>Content-Type: application/json</Str>
+        <Str>X-API-Key: %API_KEY</Str>
+      </Array>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Flash</code>
+      <sr>act1</sr>
+      <Str>VM stopped!</Str>
+      <Int>1</Int>
+    </Action>
+    <Action>
+      <code>Notify</code>
+      <sr>act2</sr>
+      <Str>Portable CC</Str>
+      <Str>VM has been stopped</Str>
+      <Int>2</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task1">
+    <c>VM Status</c>
+    <Action>
+      <code>HTTP Request</code>
+      <sr>act0</sr>
+      <Str>url</Str>
+      <Str>%CLOUD_FUNCTION_URL</Str>
+      <Int>1</Int>
+      <Str>method</Str>
+      <Str>GET</Str>
+      <Str>headers</Str>
+      <Array>
+        <Str>Content-Type: application/json</Str>
+        <Str>X-API-Key: %API_KEY</Str>
+      </Array>
+      <Int>0</Int>
+      <Str>output</Str>
+      <Int>3</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Variable Search Replace</code>
+      <sr>act1</sr>
+      <Str>ignore</Str>
+      <Str>search</Str>
+      <Str>"status":"(.*?)"</Str>
+      <Str>replace</Str>
+      <Int>1</Int>
+      <Str>store</Str>
+      <Str>status</Str>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Flash</code>
+      <sr>act2</sr>
+      <Str>VM Status: %status</Str>
+      <Int>1</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task2">
+    <c>Quick Connect to VM</c>
+    <Action>
+      <code>Run Shell</code>
+      <sr>act0</sr>
+      <Str>cmd</Str>
+      <Str>mosh ubuntu@portable-cc-dev tmux attach</Str>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task3">
+    <c>Start VM + Open Termux</c>
+    <Action>
+      <code>HTTP Request</code>
+      <sr>act0</sr>
+      <Str>url</Str>
+      <Str>%CLOUD_FUNCTION_URL</Str>
+      <Int>1</Int>
+      <Str>method</Str>
+      <Str>POST</Str>
+      <Str>headers</Str>
+      <Array>
+        <Str>Content-Type: application/json</Str>
+        <Str>X-API-Key: %API_KEY</Str>
+      </Array>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Wait</code>
+      <sr>act1</sr>
+      <Int>10000</Int>
+    </Action>
+    <Action>
+      <code>Flash</code>
+      <sr>act2</sr>
+      <Str>VM should be ready!</Str>
+      <Int>1</Int>
+    </Action>
+    <Action>
+      <code>Load App</code>
+      <sr>act3</sr>
+      <Str>package</Str>
+      <Str>com.termux</Str>
+      <Str>class</Str>
+      <Str>com.termux.app.RunCommandService</Str>
+      <Int>1</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task4">
+    <c>Start VM from Termux</c>
+    <Action>
+      <code>Run Shell</code>
+      <sr>act0</sr>
+      <Str>cmd</Str>
+      <Str>/data/data/com.termux/files/home/portable-cc-with-voice/vm-lifecycle/vm-start</Str>
+      <Int>0</Int>
+      <Int>120</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Flash</code>
+      <sr>act1</sr>
+      <Str>Starting VM...</Str>
+      <Int>1</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task8">
+    <c>Morning Dev Setup</c>
+    <Profile>
+      <midnight>0</midnight>
+      <Time>08:00</Time>
+    </Profile>
+    <Action>
+      <code>Perform Task</code>
+      <sr>act0</sr>
+      <Str>task</Str>
+      <Str>VM Status</Str>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>If</code>
+      <sr>act1</sr>
+      <Arg0>
+        <variable><Str>%status</Str><type>2</type></variable>
+        <op>2</op>
+      </Arg0>
+      <Arg1>
+        <variable><Str>TERMINATED</Str><type>2</type></variable>
+        <op>2</op>
+      </Arg1>
+    </Action>
+    <Action>
+      <code>Perform Task</code>
+      <sr>act2</sr>
+      <Str>task</Str>
+      <Str>Start Dev VM</Str>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>End If</code>
+      <sr>act3</sr>
+    </Action>
+    <Action>
+      <code>Notify</code>
+      <sr>act4</sr>
+      <Str>Portable CC</Str>
+      <Str>VM is ready for morning coding session!</Str>
+      <Int>2</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+
+  <Task sr="task6">
+    <c>Evening Dev Shutdown</c>
+    <Profile>
+      <midnight>0</midnight>
+      <Time>22:00</Time>
+    </Profile>
+    <Action>
+      <code>Perform Task</code>
+      <sr>act0</sr>
+      <Str>task</Str>
+      <Str>Stop Dev VM</Str>
+      <Int>0</Int>
+      <Int>0</Int>
+    </Action>
+    <Action>
+      <code>Notify</code>
+      <sr>act1</sr>
+      <Str>Portable CC</Str>
+      <Str>VM stopped for tonight. See you tomorrow!</Str>
+      <Int>2</Int>
+      <Int>0</Int>
+    </Action>
+  </Task>
+</TaskerData>
+
+<!--
+   IMPORT INSTRUCTIONS:
+   1. Copy this XML content to clipboard
+   2. In Tasker: Long press tasks tab → Import tasks
+   3. Paste the XML
+   4. Set variables:
+      - %CLOUD_FUNCTION_URL: Your GCP Cloud Function URL
+      - %API_KEY: Your API key
+   5. Test each task manually
+
+   VARIABLES TO SET:
+   Tasker → Variables tab → +
+   - Name: CLOUD_FUNCTION_URL
+     Value: https://us-central1-project.cloudfunctions.net/vm-control
+
+   - Name: API_KEY
+     Value: your-api-key-here
+-->
